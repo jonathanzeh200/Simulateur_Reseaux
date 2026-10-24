@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1c2d">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GéoLab"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GéoLab Réseaux</title>
+<style>
+:root{--night:#0c2033;--teal:#0c8f8e;--tealD:#0b6f74;--orange:#e58b49;--purple:#8266c9;--red:#e4544a;--ink:#153044;--muted:#66798a;--line:#d9e3e8;--bg:#f2f6f8;--c1:#0072B2;--c2:#E69F00;--c3:#00855F;--road:#22303c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--night);color:var(--ink);font:14px/1.4 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select,input{font:inherit;color:inherit}button{cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #f0ab67;outline-offset:2px}
+small{color:var(--muted)}[hidden]{display:none!important}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.top{flex:none;display:flex;align-items:center;gap:10px;background:var(--night);color:#fff;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top))}
+.logomark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:900;font-size:18px;background:linear-gradient(145deg,#13aaa2,#14708b)}
+.ttl{flex:1;min-width:0;line-height:1.15}.ttl b{font-size:16px;letter-spacing:-.3px}.ttl b span{color:#8ddacf}.ttl small{display:block;color:#a9c2d0;font-size:11px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px}
+.btn.demo{background:var(--orange);color:#1e2637}.btn.pri{background:var(--teal);color:#fff}.btn.alt{background:#e8f1f3;color:#1c4a5c}.btn.block{width:100%}
+.stage{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+#mapWrap{flex:1;min-height:0;position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;background:#e9f0f1 radial-gradient(#c3d3d6 1px,transparent 1.2px) 0 0/26px 26px}
+#tiles{position:absolute;inset:0;overflow:hidden;z-index:0}
+#tiles img{position:absolute;left:0;top:0;width:256px;height:256px;max-width:none;transform-origin:0 0;pointer-events:none;opacity:0;transition:opacity .2s}
+#tiles img.ok{opacity:1}
+#map{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
+.ui{position:absolute;z-index:5}
+.chips{top:10px;left:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}.chiprow{display:flex;gap:6px}
+.seg{display:flex;background:#e3ecef;border-radius:11px;padding:3px;gap:2px}
+.seg button{flex:1;border:0;background:transparent;padding:8px 10px;border-radius:9px;font-weight:700;font-size:13px;color:#4a6577;min-height:36px;white-space:nowrap}
+.seg button.on{background:#fff;color:var(--tealD);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.chips .seg{box-shadow:0 2px 10px rgba(12,32,51,.2);background:#fff}.chips .seg button.on{background:#e1f4f2}
+.chip{border:0;background:#fff;border-radius:11px;padding:7px 12px;font-weight:700;font-size:13px;color:#4a6577;box-shadow:0 2px 10px rgba(12,32,51,.2);min-height:36px}
+.chip.on{color:var(--tealD);background:#e1f4f2}
+.ctrls{top:10px;right:10px;display:flex;flex-direction:column;gap:8px}
+.ctrls button{width:44px;height:44px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 10px rgba(12,32,51,.22);font-size:20px;font-weight:700;color:#23465c;line-height:1}
+.ctrls button.on{background:var(--teal);color:#fff}
+@media (pointer:coarse){#zIn,#zOut{display:none}}
+.layers{top:10px;right:62px;width:min(270px,calc(100% - 76px));background:#fff;border-radius:14px;padding:10px;box-shadow:0 6px 24px rgba(12,32,51,.3)}
+.layers b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3b5566;margin-bottom:8px}
+.lgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.lgrid button{border:2px solid transparent;background:transparent;border-radius:12px;padding:3px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#35505f;line-height:1.1;text-align:center;min-width:0}
+.lgrid button i{width:100%;aspect-ratio:1;border-radius:10px;border:1px solid #cfd9de;display:block}
+.lgrid button.on{border-color:var(--teal);color:var(--tealD)}
+#osmAttr a{pointer-events:auto;color:inherit}
+.me{pointer-events:none}
+.rsum{display:flex;flex-direction:column;gap:4px;margin-top:2px;pointer-events:auto}.rs{display:flex;align-items:center;gap:7px;border:0;border-radius:999px;padding:3px 11px 3px 3px;background:#fffffff2;box-shadow:0 2px 8px rgba(12,32,51,.2);font-size:12px;font-weight:800;color:#2b4252;min-height:26px}.rs i{width:20px;height:20px;border-radius:50%;background:var(--c);color:var(--on);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800}.rs span{font-weight:600;color:#5a6f7d}.rs.on{background:var(--c);color:var(--on)}.rs.on i{background:#fff;color:var(--c)}.rs.on span{color:var(--on);opacity:.9}
+.legend{top:206px;left:10px;width:208px;background:#fffffff2;border-radius:14px;padding:10px 12px;box-shadow:0 6px 22px rgba(12,32,51,.28);font-size:12px;line-height:1.25}.legend b{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3b5566;margin:6px 0 4px}.legend b:first-child{margin-top:0}.legend b button{border:0;background:#e8eef1;border-radius:8px;width:28px;height:28px;font-size:14px}.legend .lg{display:flex;align-items:center;gap:8px;margin:3px 0;min-height:18px}.legend svg{flex:none}
+.banner{bottom:38px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 20px);display:flex;align-items:center;gap:10px;background:var(--night);color:#fff;border-radius:12px;padding:9px 8px 9px 14px;font-weight:700;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.banner{pointer-events:none}.banner button{pointer-events:auto;border:0;background:#ffffff22;color:#fff;border-radius:8px;width:30px;height:30px}
+.callout{left:10px;right:10px;bottom:42px;background:#fff;border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(12,32,51,.3);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.callout .ct{flex:1;min-width:120px;line-height:1.25}.callout .ct small{display:block}
+.callout .cb{display:flex;gap:8px;flex-wrap:wrap}
+.callout .cb button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;background:#e8f1f3;color:#1c4a5c;min-height:40px}
+.callout .cb button[data-act=start],.callout .cb button[data-act=end],.callout .cb button[data-act=startHere],.callout .cb button[data-act=endHere]{background:#e1e8ee;color:#0c2033}
+.callout .cb button[data-act=obs]{background:#fbdcda;color:#9d1f1a}.callout .cb button[data-act=one]{background:#222;color:#fff}
+.callout .cx{border:0;background:transparent;font-size:18px;color:var(--muted);width:32px;height:32px}
+.foot{position:absolute;left:8px;right:8px;bottom:6px;z-index:4;display:flex;justify-content:space-between;align-items:flex-end;gap:4px 6px;flex-wrap:wrap;pointer-events:none;font-size:10.5px}
+.foot span{background:#ffffffd9;border-radius:6px;padding:2px 7px;color:#35505f;white-space:nowrap}
+.foot .scale{display:inline-flex;align-items:flex-end;gap:6px}.foot .scale i{display:block;height:6px;border:2px solid #35505f;border-top:0}
+.fictif{background:#fff1dc!important;color:#8a4b10!important;font-weight:700}
+.warnmsg{background:#fde5d3!important;color:#8a3a10!important;font-weight:700}
+/* panneau */
+#sheet{flex:none;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -8px 26px rgba(12,32,51,.2);display:flex;flex-direction:column;position:relative;z-index:6;transition:height .22s ease;padding-bottom:env(safe-area-inset-bottom)}
+#sheet.peek{height:246px}#sheet.open{height:58vh;height:58dvh}
+.handle{border:0;background:transparent;height:22px;width:100%;display:grid;place-items:center;flex:none;padding:0}
+.handle i{display:block;width:44px;height:5px;border-radius:3px;background:#c4d2d9}
+.tabs{display:flex;gap:2px;padding:0 8px;flex:none;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:transparent;padding:9px 2px 8px;font-weight:700;font-size:12.5px;color:#6a7f8e;border-bottom:3px solid transparent;min-height:44px;line-height:1.15}
+.tabs button.on{color:var(--tealD);border-color:var(--teal)}
+.panels{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 16px}
+.panel{display:none}.panel.on{display:block}
+h4{margin:14px 0 6px;font-size:13px}
+.lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin:12px 0 6px}
+.res{display:flex;align-items:center;gap:10px;width:100%;border:2px solid var(--line);background:#fff;border-radius:13px;padding:7px 12px 7px 8px;margin-bottom:6px;text-align:left;min-height:46px}
+.res.sel{border-color:var(--c);background:color-mix(in srgb,var(--c) 8%,#fff)}
+.res .rn{width:26px;height:26px;border-radius:50%;background:var(--c);color:var(--on,#fff);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.res .rl{flex:1;min-width:0;line-height:1.2}.res .rl b{display:block;font-size:13.5px}.res .rl small{font-size:11.5px}
+.res .rt{font-size:20px;font-weight:800;letter-spacing:-.5px;white-space:nowrap;line-height:1.05;text-align:right}.res .rt em{display:block;font-style:normal;font-size:12.5px;font-weight:800;letter-spacing:0;color:#35505f}.res .rt small{font-size:12px;font-weight:700}
+.od{display:flex;align-items:stretch;gap:6px;margin:4px 0 10px}
+.odBtn{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 10px;text-align:left;min-height:48px}
+.odBtn i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;flex:none}
+.odBtn.a i,.odBtn.b i{background:#0c2033}
+.odBtn small{display:block;line-height:1}.odBtn b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.odBtn.picking{border-color:var(--teal);box-shadow:0 0 0 3px #0c8f8e33}
+.swap{border:1px solid var(--line);background:#fff;border-radius:12px;width:44px;font-size:18px;flex:none}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.fld label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:4px}
+select{width:100%;border:1px solid #c5d5dc;border-radius:10px;padding:0 10px;background:#fff;min-height:42px}
+.help{background:#eaf6f4;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:6px 0}
+.card{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;border-top:4px solid var(--c)}
+.card h5{margin:0 0 8px;font-size:14px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.card h5 span{display:flex;align-items:center;gap:8px}
+.card h5 .n{width:24px;height:24px;border-radius:50%;background:var(--c);color:var(--on,#fff);display:grid;place-items:center;font-size:12px}
+.link{border:0;background:transparent;color:#0a7580;font-weight:700;padding:6px 4px;min-height:36px}
+.road{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:8px;min-height:44px}
+.road b{font-size:14px}.road small{display:block}
+.chipsrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 8px}
+.chipsrow button{border:1px solid #c5d5dc;background:#fff;border-radius:10px;padding:9px 6px;font-weight:700;font-size:12.5px;min-height:42px}
+.chipsrow button.on{background:var(--c);border-color:var(--c);color:var(--on,#fff)}
+.rangeLine{display:flex;align-items:center;gap:10px}.rangeLine input{flex:1;min-width:0;accent-color:var(--teal);height:30px}.rangeLine output,.rangeLine span{min-width:62px;text-align:right;font-weight:800;font-size:13px}
+.bars .br{display:grid;grid-template-columns:54px 1fr 66px;align-items:center;gap:8px;margin:6px 0;font-size:12.5px}
+.bars .tr{height:12px;background:#e7eef1;border-radius:6px;overflow:hidden}.bars .tr i{display:block;height:100%;border-radius:6px}
+.bars b{text-align:right}
+details{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:#fff}
+summary{padding:12px;font-weight:700;cursor:pointer;min-height:44px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::after{content:"＋";color:var(--teal);font-weight:800}details[open] summary::after{content:"－"}
+summary::-webkit-details-marker{display:none}
+details>div{padding:0 12px 12px}
+.trace{background:#0f2a3d;color:#d6e6ee;border-radius:10px;padding:10px;font-size:12px;max-height:210px;overflow:auto;margin-top:8px}
+.trace .hl{color:#8ddacf;font-weight:800}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#eef4f6;border-radius:8px;padding:8px 10px;font-size:12.5px;margin:6px 0}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:11px}
+.stepbar{display:flex;gap:6px;align-items:center;margin-top:8px}.stepbar .btn{padding:8px 10px;min-height:38px}.stepbar span{flex:1;text-align:center;font-weight:700;font-size:12px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin:8px 0;min-height:48px}
+.sw input{width:46px;height:26px;accent-color:var(--teal)}
+.net{background:var(--bg);border-radius:12px;padding:10px 12px;margin-bottom:10px}.net b{font-size:14px}.net div{font-size:12.5px;color:#46606f}
+.stack{display:grid;gap:8px;margin:8px 0}
+ol.st{padding-left:18px;margin:6px 0}ol.st li{margin:5px 0}
+.toast{position:fixed;left:50%;top:calc(124px + env(safe-area-inset-top));transform:translate(-50%,-12px);background:#0c2033;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;max-width:calc(100% - 30px);opacity:0;pointer-events:none;transition:.2s;z-index:30;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.muted{color:var(--muted)}
+@media(min-width:900px){
+ .toast{top:70px}
+ .stage{flex-direction:row}#sheet{width:430px;height:auto!important;border-radius:0;box-shadow:-4px 0 20px rgba(12,32,51,.14)}.handle{display:none}.tabs{padding-top:6px}
+}
+</style></head>
+<body>
+<div id="app">
+<header class="top"><div class="logomark">G↗</div><div class="ttl"><b>GéoLab <span>Réseaux</span></b><small>Groupe 10 · SIG mobile &amp; analyse de réseau</small></div><button class="btn demo" id="demoTop">▶ Démo</button></header>
+<div class="stage">
+ <div id="mapWrap">
+  <div id="tiles"></div>
+  <svg id="map" role="img" aria-label="Carte du réseau routier"></svg>
+  <div class="ui chips"><div class="seg" id="critSeg"><button data-crit="time" class="on">⚡ Rapide</button><button data-crit="distance">↔ Court</button></div><div class="chiprow"><button class="chip" id="allBtn">3 tracés</button><button class="chip on" id="kmBtn">km</button></div><div class="rsum" id="rsum"></div></div>
+  <div class="ui ctrls"><button id="zIn" aria-label="Zoom avant">+</button><button id="zOut" aria-label="Zoom arrière">−</button><button id="zFit" aria-label="Tout voir">⤢</button><button id="legBtn" aria-label="Légende">ⓘ</button><button id="locBtn" aria-label="Ma position" title="Ma position">◎</button><button id="osmBtn" aria-label="Types de carte" title="Types de carte">🗺</button></div>
+  <div class="ui layers" id="layers" hidden><b>Type de carte</b><div class="lgrid" id="lgrid"></div></div>
+  <div class="ui legend" id="legend" hidden></div>
+  <div class="ui banner" id="banner" hidden><span id="bannerTxt"></span><button id="bannerX" aria-label="Annuler">✕</button></div>
+  <div class="ui callout" id="callout" hidden></div>
+  <div class="foot"><span id="netChip">—</span><span id="osmMsg" hidden></span><span class="scale" id="scale"><i id="scaleBar"></i><em id="scaleTxt" style="font-style:normal"></em></span><span id="osmAttr" hidden></span></div>
+ </div>
+ <section id="sheet" class="peek">
+  <button class="handle" id="handle" aria-label="Agrandir ou réduire le panneau"><i></i></button>
+  <nav class="tabs" id="tabs"><button data-tab="trajet" class="on">Trajet</button><button data-tab="contraintes">Contraintes</button><button data-tab="analyse">Analyse</button><button data-tab="donnees">Données</button></nav>
+  <div class="panels">
+
+   <div class="panel on" id="p-trajet">
+    <div id="results"></div>
+    <div class="lab">Trajet</div>
+    <div class="od"><button class="odBtn a" id="btnStart"><i>A</i><span><small>Départ</small><b id="startLbl">—</b></span></button><button class="swap" id="swap" aria-label="Inverser départ et arrivée">⇅</button><button class="odBtn b" id="btnEnd"><i>B</i><span><small>Arrivée</small><b id="endLbl">—</b></span></button></div>
+    <div class="help" style="margin-top:-2px">Touchez <b>n’importe où</b> sur la carte : « A · Départ ici » ou « B · Arrivée ici ». La distance jusqu’à la route la plus proche (à pied) s’ajoute au trajet. Bouton <b>ⓘ</b> : légende des couleurs.</div>
+    <div class="row2"><div class="fld"><label>Usager</label><div class="seg" id="vehSeg"><button data-v="taxi" class="on">🚕 Taxi</button><button data-v="walk">🚶 Piéton</button></div></div><div class="fld"><label for="hour">Heure de départ</label><select id="hour"><option value="8">08 h · pointe</option><option value="12">12 h · fluide</option><option value="17" selected>17 h · pointe</option><option value="21">21 h · soirée</option></select></div></div>
+    <div class="help" id="timeCtx"></div>
+   </div>
+
+   <div class="panel" id="p-contraintes">
+    <div class="help" style="margin-top:0">Astuce : touchez une <b>route</b> sur la carte, puis « Obstacle » ou « Sens unique ».</div>
+    <div class="card" style="--c:var(--c2);--on:#1a1a1a"><h5><span><i class="n">2</i> Obstacle sur une route</span><button class="link" id="obsClear">Retirer</button></h5>
+     <div class="road"><div id="obsRoute"></div><button class="btn alt" id="obsPick">📍 Choisir</button></div>
+     <div class="chipsrow" id="obsTypes"><button data-o="traffic">🚗 Embouteillage</button><button data-o="pothole">🕳 Nids-de-poule</button><button data-o="works">🚧 Travaux</button><button data-o="closed">⛔ Route fermée</button></div>
+     <div id="speedWrap"><small>Vitesse sur le tronçon (hypothèse)</small><div class="rangeLine"><input type="range" id="obSpeed" min="2" max="35" step="1" value="5"><span id="speedNum">5 km/h</span></div></div>
+    </div>
+    <div class="card" style="--c:var(--c3)"><h5><span><i class="n">3</i> Rue à sens unique</span><button class="link" id="oneClear">Retirer</button></h5>
+     <div class="road"><div id="oneRoute"></div><button class="btn alt" id="onePick">📍 Choisir</button></div>
+     <small>Sens autorisé aux voitures</small>
+     <div class="chipsrow" id="oneDirs"><button id="dirFwd"></button><button id="dirBwd"></button></div>
+     <small>Le sens unique ne s'applique pas aux piétons. Le test 3 cumule l'obstacle et le sens unique.</small>
+    </div>
+   </div>
+
+   <div class="panel" id="p-analyse">
+    <div class="lab" style="margin-top:2px">Comparer les scénarios</div>
+    <div class="seg" id="barSeg"><button data-m="time" class="on">Durée</button><button data-m="distance">Distance</button></div>
+    <div class="bars" id="bars"></div>
+    <div class="help" id="comparison"></div>
+    <details id="dDijk"><summary>Dijkstra pas à pas</summary><div>
+      <div class="seg" id="algoSeg"><button data-c="time" class="on">Temps minimum</button><button data-c="distance">Distance minimum</button></div>
+      <p id="algoSummary" style="margin:8px 0 4px"></p>
+      <div class="mono" id="formulas"></div>
+      <div class="stepbar"><button class="btn alt" id="tracePrev">←</button><span id="stepCount">Étape 0/0</span><button class="btn pri" id="traceNext">Suivant →</button><button class="btn alt" id="traceAll">Tout</button></div>
+      <div class="trace" id="traceText">Appuyez sur « Suivant ».</div>
+      <h4>Chemin retenu (scénario sélectionné)</h4>
+      <table><thead><tr><th>Tronçon</th><th>Dist.</th><th>Vitesse</th><th>Temps</th></tr></thead><tbody id="edgeBreakdown"></tbody></table>
+    </div></details>
+    <details><summary>Vitesses du modèle</summary><div>
+      <p class="muted" style="margin:0 0 8px;font-size:12.5px">Hypothèses de simulation, <b>pas des mesures</b> faites à Yaoundé. Temps d'un tronçon = 60 × distance / vitesse.</p>
+      <div class="fld"><label>Taxi · axe principal</label><div class="rangeLine"><input id="vPrimary" type="range" min="15" max="55" value="38"><span id="vPrimaryOut">38 km/h</span></div></div>
+      <div class="fld"><label>Taxi · voie secondaire</label><div class="rangeLine"><input id="vSecondary" type="range" min="10" max="45" value="30"><span id="vSecondaryOut">30 km/h</span></div></div>
+      <div class="fld"><label>Taxi · voie locale</label><div class="rangeLine"><input id="vLocal" type="range" min="8" max="35" value="24"><span id="vLocalOut">24 km/h</span></div></div>
+      <div class="fld"><label>Piéton</label><div class="rangeLine"><input id="vWalk" type="range" min="2" max="7" step="0.5" value="4.5"><span id="vWalkOut">4,5 km/h</span></div></div>
+      <div class="fld"><label>Coefficient en heure de pointe</label><div class="rangeLine"><input id="peakCoeff" type="range" min="0.2" max="1" step="0.05" value="0.45"><span id="peakCoeffOut">45 %</span></div></div>
+      <div class="fld"><label>Coefficient hors pointe</label><div class="rangeLine"><input id="offCoeff" type="range" min="0.45" max="1" step="0.05" value="0.9"><span id="offCoeffOut">90 %</span></div></div>
+      <div class="mono" id="speedExample"></div>
+    </div></details>
+   </div>
+
+   <div class="panel" id="p-donnees">
+    <div class="net" id="netInfo"></div>
+    <button class="btn pri block" id="importBtn" style="min-height:50px;font-size:14px">⇪ Importer mon réseau (KML, KMZ, GeoJSON)</button>
+    <input id="geoFile" type="file" accept=".kml,.kmz,.geojson,.json,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/geo+json,application/json" hidden>
+    <label class="sw"><span><b>Afficher un fond de carte</b><br><small>Internet requis ; les tuiles déjà vues restent en cache.</small></span><input type="checkbox" id="osmSwitch"></label>
+    <div class="fld" style="margin:8px 0"><label for="baseSel">Type de carte</label><select id="baseSel"></select></div>
+    <div class="stack"><button class="btn alt block" id="demoBtn">▶ Rejouer la démonstration</button><button class="btn alt block" id="restoreDemo">◌ Retour au réseau pédagogique</button><button class="btn alt block" id="exportBtn">⇩ Exporter les résultats (JSON)</button></div>
+    <details><summary>Préparer mon réseau (QGIS → KML)</summary><div>
+      <ol class="st"><li>Chargez vos routes et gardez une <b>petite zone</b> (quelques km).</li><li><b>Diviser les lignes aux intersections</b> (outil « Dissoudre/Explode » puis « Lignes aux intersections »), supprimez les doublons.</li><li>Exportez en <b>KML</b> (ou KMZ / GeoJSON) en <b>WGS84 (EPSG:4326)</b>.</li><li>Importez ici : chaque sommet partagé devient un nœud.</li></ol>
+      <p class="muted" style="font-size:12.5px;margin:6px 0">Deux lignes qui se croisent sans sommet commun <b>ne sont pas reliées</b>. L'import indique le nombre de composantes connexes pour détecter ces coupures. Colonne <code>highway</code> reconnue (primary, secondary…).</p>
+    </div></details>
+    <details><summary>À propos, limites et sources</summary><div style="font-size:12.5px">
+      <p>Réseau intégré <b>entièrement fictif</b> (30 nœuds, 56 tronçons), posé sur Yaoundé à titre illustratif : il ne représente pas les vraies routes. Les vitesses sont des <b>hypothèses modifiables</b>, non mesurées. Ce n'est pas une application de navigation et elle ne doit pas servir à guider des véhicules ni des secours.</p>
+      <p>Plages de pointe 6–9 h et 16–19 h : <a href="https://www.cameroon-tribune.cm/article.html/81014/fr.html/details_2" target="_blank" rel="noopener">Cameroon Tribune (2026)</a>. Nids-de-poule : <a href="https://newsroom.aaa.com/2022/03/aaa-potholes-pack-a-punch-as-drivers-pay-26-5-billion-in-related-vehicle-repairs/" target="_blank" rel="noopener">AAA (2022)</a>. Algorithme : <a href="https://doi.org/10.1007/BF01386390" target="_blank" rel="noopener">Dijkstra (1959)</a>. Fond de carte © contributeurs OpenStreetMap.</p>
+    </div></details>
+   </div>
+
+  </div>
+ </section>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const COLORS=['#0072B2','#E69F00','#00855F'],ON=['#fff','#1a1a1a','#fff'],TEST_LABELS=['Réseau libre','+ obstacle','+ obstacle + sens unique'],EPS=1e-9;
+const round=(x,n=2)=>Number(x.toFixed(n)),fmt=(x,n=1)=>round(x,n).toLocaleString('fr-FR');
+const esc=v=>String(v??'').replace(/[<>&"']/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[s]));
+const OSMC='© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>';
+const SRC={
+ carto:{name:'CARTO',max:20,url:(z,x,y)=>`https://${'abcd'[(x+y)&3]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`,attr:OSMC+' · © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'},
+ osmfr:{name:'OSM France',max:20,url:(z,x,y)=>`https://${'abc'[(x+y)%3]}.tile.openstreetmap.fr/osmfr/${z}/${x}/${y}.png`,attr:OSMC+' · OSM France'},
+ osm:{name:'OpenStreetMap',max:19,url:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`,attr:OSMC},
+ hot:{name:'OSM Humanitaire',max:19,url:(z,x,y)=>`https://${'abc'[(x+y)%3]}.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png`,attr:OSMC+' · HOT'},
+ esri:{name:'Esri Satellite',max:18,url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,attr:'Imagerie © Esri, Maxar, Earthstar Geographics'},
+ topo:{name:'OpenTopoMap',max:17,url:(z,x,y)=>`https://${'abc'[(x+y)%3]}.tile.opentopomap.org/${z}/${x}/${y}.png`,attr:OSMC+' · SRTM · © <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a>'}
+};
+const LAYERS=[
+ {id:'plan',name:'Plan',chain:['carto','osmfr','osm'],sw:'linear-gradient(135deg,#f4efe3 0 40%,#fff 40% 46%,#cfe6c8 46% 70%,#bcd9ef 70%)'},
+ {id:'sat',name:'Satellite',chain:['esri'],sw:'linear-gradient(135deg,#2f4a2a,#59673a 45%,#7a6a4a 70%,#1f3b4d)'},
+ {id:'relief',name:'Relief',chain:['topo','osmfr'],sw:'repeating-linear-gradient(135deg,#d9e6bf 0 8px,#c6d6a4 8px 10px,#e6dcc0 10px 18px)'},
+ {id:'hot',name:'Humanitaire',chain:['hot','osmfr','carto'],sw:'linear-gradient(135deg,#f6e3dc 0 45%,#fff 45% 52%,#e9d3c8 52%)'},
+ {id:'osm',name:'OSM',chain:['osm','osmfr','carto'],sw:'linear-gradient(135deg,#f2efe9 0 45%,#f7e8a6 45% 52%,#aad3df 52%)'},
+ {id:'none',name:'Réseau seul',chain:[],sw:'radial-gradient(#9fb0b8 1.2px,#eef3f5 1.5px) 0 0/10px 10px'}
+];
+
+let showKm=true,graph=null,nodesMap=new Map(),edgeMap=new Map(),adj=[],results=[],selectedCase=0,mapCriterion='time',showAll=false,showOSM=false,layerId='plan',lastLayer='plan',srcIdx=0,me=null,algoStep=0,algoCrit='time',activeTab='trajet',pick=null,sel=null;
+const state={start:null,end:null,vehicle:'taxi',hour:17,obsEdge:null,obstacle:'traffic',obSpeed:5,oneEdge:null,oneFwd:true,vPrimary:38,vSecondary:30,vLocal:24,vWalk:4.5,peakCoeff:.45,offCoeff:.90};
+
+/* ---------- projection (Web Mercator, unités monde 0..256) ---------- */
+function merc(lon,lat){const s=Math.sin(Math.max(-85.05,Math.min(85.05,lat))*Math.PI/180);return{x:(lon+180)/360*256,y:(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*256}}
+function geoDist(p,q){const r=6371,dLat=(q[1]-p[1])*Math.PI/180,dLon=(q[0]-p[0])*Math.PI/180,s=Math.sin(dLat/2)**2+Math.cos(p[1]*Math.PI/180)*Math.cos(q[1]*Math.PI/180)*Math.sin(dLon/2)**2;return 2*r*Math.asin(Math.min(1,Math.sqrt(s)))}
+
+/* ---------- réseau pédagogique (fictif) ---------- */
+function demoNetwork(){
+ const X=[88,215,344,474,607,746],Y=[91,201,317,438,560],nodes=[],edges=[];
+ for(let r=0;r<5;r++)for(let c=0;c<6;c++){const id=String.fromCharCode(65+c)+(r+1),dx=Math.sin((r+2)*(c+1)*1.71)*13,dy=Math.cos((c+3)*(r+1)*1.39)*11;nodes.push({id,px:X[c]+dx,py:Y[r]+dy,label:id})}
+ const by=(c,r)=>String.fromCharCode(65+c)+(r+1);let ei=0;
+ function add(a,b,cls){const u=nodes.find(n=>n.id===a),v=nodes.find(n=>n.id===b),d=Math.hypot(u.px-v.px,u.py-v.py)*.0068;edges.push({id:'E'+String(++ei).padStart(2,'0'),a,b,km:d,cls,name:`Rue ${a}–${b}`})}
+ for(let r=0;r<5;r++)for(let c=0;c<5;c++){if(r===0&&c===2)continue;if(r===4&&c===1)continue;add(by(c,r),by(c+1,r),(r===1||r===3)?'primary':r===2?'secondary':'local')}
+ for(let c=0;c<6;c++)for(let r=0;r<4;r++){if((c===0&&r===2)||(c===5&&r===0))continue;add(by(c,r),by(c,r+1),(c===2||c===4)?'primary':c===1?'secondary':'local')}
+ for(const [a,b] of [['A2','B3'],['B2','C3'],['C3','D4'],['D3','E2'],['D2','E3'],['E3','F4'],['A4','B5'],['B4','C5'],['C2','D1'],['D4','E5'],['B3','C4']])add(a,b,'secondary');
+ /* ancrage illustratif : 1 px = 6,8 m autour du centre de Yaoundé */
+ const lat0=3.848,lon0=11.502,mLat=111320,mLon=111320*Math.cos(lat0*Math.PI/180);
+ for(const n of nodes){n.lon=lon0+(n.px-427)*6.8/mLon;n.lat=lat0-(n.py-325)*6.8/mLat}
+ return{nodes,edges,kind:'demo',title:'Réseau pédagogique fictif · Groupe 10'}
+}
+
+/* ---------- graphe : préparation, composantes connexes ---------- */
+function prepare(g){
+ g.nodes.forEach((n,i)=>{const m=merc(n.lon,n.lat);n.x=m.x;n.y=m.y;n.i=i});
+ nodesMap=new Map(g.nodes.map(n=>[n.id,n]));edgeMap=new Map(g.edges.map(e=>[e.id,e]));
+ adj=g.nodes.map(()=>[]);
+ for(const e of g.edges){e.ia=nodesMap.get(e.a).i;e.ib=nodesMap.get(e.b).i;adj[e.ia].push({e,to:e.ib});adj[e.ib].push({e,to:e.ia})}
+ const comp=new Int32Array(g.nodes.length).fill(-1),sizes=[];
+ for(let s=0;s<g.nodes.length;s++){if(comp[s]>=0)continue;const id=sizes.length;let cnt=0,st=[s];comp[s]=id;while(st.length){const u=st.pop();cnt++;for(const {to} of adj[u])if(comp[to]<0){comp[to]=id;st.push(to)}}sizes.push(cnt)}
+ let main=0;sizes.forEach((v,i)=>{if(v>sizes[main])main=i});
+ g.comps=sizes.length;g.mainSize=sizes[main]||0;g.mainNodes=g.nodes.filter((_,i)=>comp[i]===main).map(n=>n.i);
+ let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;for(const n of g.nodes){minx=Math.min(minx,n.x);maxx=Math.max(maxx,n.x);miny=Math.min(miny,n.y);maxy=Math.max(maxy,n.y)}
+ g.bounds={minx,maxx,miny,maxy};
+}
+
+/* ---------- file de priorité ---------- */
+class Heap{constructor(){this.c=[];this.v=[]}get size(){return this.c.length}
+ push(c,v){const C=this.c,V=this.v;let i=C.length;C.push(c);V.push(v);while(i>0){const p=(i-1)>>1;if(C[p]<=c)break;C[i]=C[p];V[i]=V[p];i=p}C[i]=c;V[i]=v}
+ pop(){const C=this.c,V=this.v,rc=C[0],rv=V[0],lc=C.pop(),lv=V.pop(),n=C.length;if(n){let i=0;for(;;){let l=2*i+1;if(l>=n)break;if(l+1<n&&C[l+1]<C[l])l++;if(C[l]>=lc)break;C[i]=C[l];V[i]=V[l];i=l}C[i]=lc;V[i]=lv}return[rc,rv]}}
+
+/* ---------- modèle de coût ---------- */
+function peak(){const h=Number(state.hour);return(h>=6&&h<9)||(h>=16&&h<19)}
+function baseSpeed(e){if(state.vehicle==='walk')return state.vWalk;const b={primary:state.vPrimary,secondary:state.vSecondary,local:state.vLocal}[e.cls]||state.vLocal;return b*(peak()?state.peakCoeff:state.offCoeff)}
+function speedOf(e,which){const s=baseSpeed(e);if(which>=1&&state.obsEdge&&e.id===state.obsEdge){if(state.obstacle==='closed')return 0;if(state.vehicle==='walk'){if(state.obstacle==='pothole')return Math.min(s,3.2);if(state.obstacle==='works')return Math.min(s,3.0);return s}return Math.min(s,Number(state.obSpeed))}return s}
+function oneAllowed(e,from,to,which){if(which<2||state.vehicle==='walk'||!state.oneEdge||e.id!==state.oneEdge)return true;return state.oneFwd?(from===e.ia&&to===e.ib):(from===e.ib&&to===e.ia)}
+const NOPATH={found:false,km:Infinity,min:Infinity,nodes:[],edges:[],trace:[]};
+function dijkstraCore(sId,tId,which,crit,withTrace){
+ const N=graph.nodes.length,sn=nodesMap.get(sId),tn=nodesMap.get(tId);if(!sn||!tn)return NOPATH;
+ const s=sn.i,t=tn.i,ds=new Float64Array(N).fill(Infinity),pn=new Int32Array(N).fill(-1),pe=new Array(N),done=new Uint8Array(N),h=new Heap(),trace=[],L=i=>graph.nodes[i].label,unit=crit==='time'?'min':'km';
+ ds[s]=0;h.push(0,s);if(withTrace)trace.push({node:'Départ',msg:`Initialisation : d(${L(s)}) = 0 ; tous les autres nœuds valent ∞.`,updates:[]});
+ while(h.size){const [c,u]=h.pop();if(done[u])continue;done[u]=1;const upd=[];
+  if(u!==t){for(const {e,to} of adj[u]){const sp=speedOf(e,which);
+    if(sp<=0){if(withTrace)upd.push(`⛔ ${L(u)}→${L(to)} : voie fermée`);continue}
+    if(!oneAllowed(e,u,to,which)){if(withTrace)upd.push(`↛ ${L(u)}→${L(to)} : sens interdit`);continue}
+    if(done[to])continue;const cand=c+(crit==='distance'?e.km:60*e.km/sp);
+    if(cand<ds[to]-EPS){if(withTrace)upd.push(`${L(u)}→${L(to)} : ${Number.isFinite(ds[to])?round(ds[to],2):'∞'} → ${round(cand,2)} ${unit}`);ds[to]=cand;pn[to]=u;pe[to]=e;h.push(cand,to)}}}
+  if(withTrace)trace.push({node:L(u),msg:u===t?'Destination atteinte : chemin optimal établi.':`Nœud ${L(u)} définitivement étiqueté à ${round(c,2)} ${unit}.`,updates:upd});
+  if(u===t)break}
+ if(!Number.isFinite(ds[t]))return{...NOPATH,trace};
+ const path=[t],eps=[];while(path[0]!==s){const o=pn[path[0]];if(o<0)break;eps.unshift(pe[path[0]]);path.unshift(o)}
+ const km=eps.reduce((v,e)=>v+e.km,0),min=eps.reduce((v,e)=>v+60*e.km/speedOf(e,which),0);
+ return{found:true,km,min,nodes:path.map(i=>graph.nodes[i].id),idx:path,edges:eps,trace,objective:ds[t],criterion:crit}
+}
+/* ---------- points libres : projection sur le tronçon le plus proche ---------- */
+const FP={start:null,end:null},lastNode={};let virt=null;
+const kmPerWorld=lat=>40075.016686/256*Math.cos(lat*Math.PI/180);
+const worldLat=y=>Math.atan(Math.sinh(Math.PI*(1-2*y/256)))*180/Math.PI;
+const worldLon=x=>x/256*360-180;
+const fmtD=km=>km<1?Math.round(km*1000)+' m':fmt(km,2)+' km';
+const nReal=()=>graph.nodes.length-(virt?virt.specs.length:0);
+function snapTo(x,y){let best=null;for(const e of graph.edges){const a=graph.nodes[e.ia],b=graph.nodes[e.ib],vx=b.x-a.x,vy=b.y-a.y,L2=vx*vx+vy*vy;let t=L2?((x-a.x)*vx+(y-a.y)*vy)/L2:0;t=Math.max(0,Math.min(1,t));const px=a.x+t*vx,py=a.y+t*vy,d=Math.hypot(px-x,py-y);if(!best||d<best.d)best={e,t,px,py,d}}return best}
+function removeVirtual(){if(!virt)return;for(const [i,a] of virt.saved)adj[i]=a;adj.length=virt.N0;graph.nodes.length=virt.N0;for(const sp of virt.specs)nodesMap.delete(sp.id);virt=null}
+function applyFree(){
+ removeVirtual();for(const k of ['start','end'])if(!FP[k]&&/^V[AB]$/.test(state[k]))state[k]=lastNode[k];const specs=[];
+ for(const [key,id,tag] of [['start','VA','A'],['end','VB','B']]){const p=FP[key];if(!p)continue;const m=merc(p.lon,p.lat),sn=snapTo(m.x,m.y);if(!sn)continue;specs.push({key,id,tag,m,sn,acc:sn.d*kmPerWorld(p.lat)})}
+ if(!specs.length)return;
+ const N0=graph.nodes.length,saved=new Map(),accById={},byEdge=new Map();
+ specs.forEach((sp,q)=>{sp.i=N0+q;graph.nodes.push({id:sp.id,label:'Point '+sp.tag,lon:worldLon(sp.sn.px),lat:worldLat(sp.sn.py),x:sp.sn.px,y:sp.sn.py,i:sp.i,virt:true});nodesMap.set(sp.id,graph.nodes[sp.i]);adj.push([]);state[sp.key]=sp.id;lastNode[sp.key]=graph.nodes[sp.sn.t<.5?sp.sn.e.ia:sp.sn.e.ib].id;accById[sp.id]=sp.acc;const l=byEdge.get(sp.sn.e)||[];l.push(sp);byEdge.set(sp.sn.e,l)});
+ for(const [e,l] of byEdge){for(const i of [e.ia,e.ib]){if(!saved.has(i))saved.set(i,adj[i]);adj[i]=adj[i].filter(o=>o.e!==e)}
+  l.sort((u,v)=>u.sn.t-v.sn.t);const ch=[{i:e.ia,t:0},...l.map(sp=>({i:sp.i,t:sp.sn.t})),{i:e.ib,t:1}];
+  for(let q=0;q<ch.length-1;q++){const A=ch[q],B=ch[q+1],pc={id:e.id,a:graph.nodes[A.i].id,b:graph.nodes[B.i].id,cls:e.cls,name:e.name,km:e.km*(B.t-A.t),ia:A.i,ib:B.i,virt:true};adj[A.i].push({e:pc,to:B.i});adj[B.i].push({e:pc,to:A.i})}}
+ virt={N0,saved,specs,accById}
+}
+function dijkstra(sId,tId,which,crit,withTrace){
+ const r=dijkstraCore(sId,tId,which,crit,withTrace);if(!r.found||!virt)return r;
+ const a=(virt.accById[sId]||0)+(virt.accById[tId]||0);if(!a)return r;const am=60*a/Math.max(.1,state.vWalk);
+ return{...r,km:r.km+a,min:r.min+am,netKm:r.km,netMin:r.min,accKm:a,accMin:am,objective:r.objective+(crit==='time'?am:a)}
+}
+function farthestFrom(i0){const N=graph.nodes.length,d=new Float64Array(N).fill(Infinity),h=new Heap();d[i0]=0;h.push(0,i0);let best=i0;
+ while(h.size){const [c,u]=h.pop();if(c>d[u])continue;if(c>d[best])best=u;for(const {e,to} of adj[u]){const n=c+e.km;if(n<d[to]){d[to]=n;h.push(n,to)}}}return best}
+const routeSig=r=>r?.found?r.nodes.join('>'):'∅';
+const lbl=id=>nodesMap.get(id)?.label||id;
+const edgeLbl=e=>e?`${lbl(e.a)}–${lbl(e.b)}`:'—';
+
+/* ---------- chargement d'un réseau ---------- */
+function setGraph(g,preset){
+ removeVirtual();FP.start=FP.end=null;graph=g;prepare(g);pick=null;sel=null;$('callout').hidden=true;$('banner').hidden=true;
+ if(preset==='demo'){Object.assign(state,{start:'A4',end:'F4',vehicle:'taxi',hour:17,obstacle:'traffic',obSpeed:5,obsEdge:edgeBetween('D4','E4').id,oneEdge:edgeBetween('A4','B4').id,oneFwd:false});syncInputs();setOSM(false,true)}
+ else{const m=g.mainNodes[0],a=farthestFrom(m),b=farthestFrom(a);state.start=g.nodes[a].id;state.end=g.nodes[b].id;state.obsEdge=state.oneEdge=null;results=[];autoConstraints();setOSM(true,true)}
+ selectedCase=0;algoStep=0;fitView();updateAll()
+}
+function edgeBetween(a,b){return graph.edges.find(e=>e.a===a&&e.b===b||e.b===a&&e.a===b)}
+function autoConstraints(){
+ const r=dijkstra(state.start,state.end,0,'time');if(!r.found||!r.edges.length)return;
+ const L=r.edges.length,io=Math.floor(L/2),i1=Math.max(0,Math.floor((L-1)/4));state.obsEdge=r.edges[io].id;state.oneEdge=r.edges[i1].id;
+ state.oneFwd=!(r.idx[i1]===r.edges[i1].ia); /* on autorise le sens contraire au trajet */
+ state.obstacle='traffic';state.obSpeed=5
+}
+function syncInputs(){$('hour').value=String(state.hour);setSeg('vehSeg','v',state.vehicle);for(const k of ['vPrimary','vSecondary','vLocal','vWalk','peakCoeff','offCoeff'])$(k).value=state[k]}
+
+/* ---------- import KML / KMZ / GeoJSON ---------- */
+const okLL=p=>Array.isArray(p)&&Number.isFinite(p[0])&&Number.isFinite(p[1]);
+function addLine(coords,props,out){if(!Array.isArray(coords))return;for(let i=1;i<coords.length;i++)if(okLL(coords[i])&&okLL(coords[i-1]))out.push({a:coords[i-1],b:coords[i],p:props||{}})}
+function addGeom(g,props,out){if(!g)return;const t=g.type;if(t==='LineString')addLine(g.coordinates,props,out);else if(t==='MultiLineString')(g.coordinates||[]).forEach(c=>addLine(c,props,out));else if(t==='GeometryCollection')(g.geometries||[]).forEach(x=>addGeom(x,props,out))}
+function geojsonSegments(obj){const out=[];if(obj.type==='FeatureCollection'&&Array.isArray(obj.features))obj.features.forEach(f=>addGeom(f.geometry,f.properties,out));else if(obj.type==='Feature')addGeom(obj.geometry,obj.properties,out);else if(obj.type)addGeom(obj,{},out);else throw Error('GeoJSON non reconnu.');return out}
+function kmlProps(pm){const p={};for(const ch of pm.children)if(ch.localName==='name')p.name=ch.textContent.trim();for(const d of pm.getElementsByTagNameNS('*','Data')){const v=d.getElementsByTagNameNS('*','value')[0],k=d.getAttribute('name');if(k&&v)p[k]=v.textContent.trim()}for(const d of pm.getElementsByTagNameNS('*','SimpleData'))p[d.getAttribute('name')]=d.textContent.trim();return p}
+function kmlSegments(text){
+ const doc=new DOMParser().parseFromString(text,'application/xml');if(doc.getElementsByTagName('parsererror').length)throw Error('Fichier KML illisible (XML invalide).');
+ const out=[];let lines=0;
+ for(const ls of doc.getElementsByTagNameNS('*','LineString')){lines++;let pm=ls.parentNode;while(pm&&pm.localName!=='Placemark')pm=pm.parentNode;const props=pm?kmlProps(pm):{};const ce=ls.getElementsByTagNameNS('*','coordinates')[0];if(!ce)continue;
+  const coords=ce.textContent.trim().split(/\s+/).filter(Boolean).map(s=>s.split(',').map(Number));addLine(coords,props,out)}
+ if(!lines)throw Error(doc.getElementsByTagNameNS('*','Polygon').length||doc.getElementsByTagNameNS('*','Point').length?'Le KML contient des points ou polygones, pas des lignes de routes.':'Aucune ligne (LineString) dans ce KML.');
+ return out
+}
+async function kmzToText(buf){
+ const dv=new DataView(buf),u8=new Uint8Array(buf);let e=-1;for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65600);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break}
+ if(e<0)throw Error('KMZ invalide (archive illisible).');
+ const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true),best=null;
+ for(let k=0;k<n;k++){if(dv.getUint32(p,true)!==0x02014b50)break;const meth=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true),name=new TextDecoder().decode(u8.subarray(p+46,p+46+nl));
+  if(/\.kml$/i.test(name)&&(!best||/(^|\/)doc\.kml$/i.test(name)))best={meth,csz,off};p+=46+nl+el+cl}
+ if(!best)throw Error('Aucun fichier .kml dans ce KMZ.');
+ const nl=dv.getUint16(best.off+26,true),el=dv.getUint16(best.off+28,true),start=best.off+30+nl+el,data=u8.subarray(start,start+best.csz);
+ if(best.meth===0)return new TextDecoder().decode(data);
+ if(best.meth!==8||typeof DecompressionStream==='undefined')throw Error('Ce navigateur ne sait pas décompresser le KMZ : exportez en KML.');
+ const ds=new DecompressionStream('deflate-raw'),w=ds.writable.getWriter();w.write(data);w.close();return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer())
+}
+function buildGraph(segs,title){
+ if(!segs.length)throw Error('Aucune géométrie linéaire exploitable.');
+ if(segs.length>6000)throw Error(`Réseau trop volumineux (${segs.length} segments, maximum 6000). Exportez une zone plus petite.`);
+ for(const s of segs)for(const p of [s.a,s.b])if(Math.abs(p[0])>180||Math.abs(p[1])>90)throw Error('Coordonnées non géographiques : exportez en WGS84 (EPSG:4326).');
+ const nodes=[],edges=[],lookup=new Map(),seen=new Set();
+ const node=p=>{const k=p[0].toFixed(5)+','+p[1].toFixed(5);if(!lookup.has(k)){const id='N'+String(nodes.length+1).padStart(3,'0');nodes.push({id,label:id,lon:p[0],lat:p[1]});lookup.set(k,id)}return lookup.get(k)};
+ let k=0;
+ for(const s of segs){const km=geoDist(s.a,s.b);if(km<.001)continue;const a=node(s.a),b=node(s.b);if(a===b)continue;const key=a<b?a+b:b+a;if(seen.has(key))continue;seen.add(key);
+  const hw=String(s.p.highway||s.p.fclass||s.p.type||'');const cls=/^(motorway|trunk|primary)/.test(hw)?'primary':/^(secondary|tertiary)/.test(hw)?'secondary':'local';
+  edges.push({id:'R'+String(++k).padStart(4,'0'),a,b,km,cls,name:String(s.p.name||s.p.ref||'Route importée')})}
+ if(nodes.length<2||!edges.length)throw Error('Aucun tronçon exploitable après nettoyage.');
+ return{nodes,edges,kind:'import',title:title||'Réseau importé'}
+}
+async function importFile(file){
+ const name=file.name.toLowerCase();let text=name.endsWith('.kmz')?await kmzToText(await file.arrayBuffer()):await file.text();text=text.replace(/^﻿/,'').trim();
+ const kind=text.startsWith('<')?'KML':'GeoJSON';const segs=kind==='KML'?kmlSegments(text):geojsonSegments(JSON.parse(text));return{g:buildGraph(segs,file.name),kind}
+}
+
+/* ---------- interface : mise à jour ---------- */
+function toast(msg,ms=3600){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),ms)}
+function updateRsum(){
+ $('rsum').innerHTML=results.map((r,i)=>{const x=mapCriterion==='time'?r.fast:r.short;return`<button class="rs${i===selectedCase?' on':''}" data-case="${i}" style="--c:${COLORS[i]};--on:${ON[i]}"><i>${i+1}</i>${x.found?`${fmt(x.km,2)} km<span>${fmt(x.min,1)} min</span>`:'impossible'}</button>`}).join('')
+}
+function setSeg(id,attr,val){for(const b of $(id).children)b.classList.toggle('on',b.dataset[attr]===String(val))}
+function updateAll(){
+ applyFree();
+ results=[0,1,2].map(i=>({fast:dijkstra(state.start,state.end,i,'time'),short:dijkstra(state.start,state.end,i,'distance')}));
+ $('results').innerHTML=results.map((r,i)=>{const f=r.fast;return`<button class="res${i===selectedCase?' sel':''}" data-case="${i}" style="--c:${COLORS[i]};--on:${ON[i]}"><span class="rn">${i+1}</span><span class="rl"><b>${TEST_LABELS[i]}</b><small>${f.found?(r.short.km<f.km-.005?`Plus court : ${fmt(r.short.km,2)} km`:'Aussi le plus court')+(f.accKm?` · dont ${fmtD(f.accKm)} d’accès`:''):'Aucun chemin possible'}</small></span><span class="rt">${f.found?fmt(f.min,1)+' <small>min</small><em>'+fmt(f.km,2)+' km</em>':'—'}</span></button>`}).join('');
+ $('startLbl').textContent=FP.start?'Point libre · '+fmtD(virt.accById.VA):lbl(state.start);$('endLbl').textContent=FP.end?'Point libre · '+fmtD(virt.accById.VB):lbl(state.end);
+ const p=peak();$('timeCtx').innerHTML=`${p?'🔴 <b>Heure de pointe</b>':'🟢 <b>Trafic plus fluide</b>'} · taxi à <b>${round((p?state.peakCoeff:state.offCoeff)*100,0)} %</b> de sa vitesse de base (réglable dans Analyse).`;
+ $('netChip').textContent=graph.kind==='demo'?`Fictif · ${nReal()} nœuds`:`${nReal()} nœuds · ${graph.edges.length} tronçons`;$('netChip').className=graph.kind==='demo'?'fictif':'';
+ updateRsum();updateConstraints();updateNetInfo();updateComparison();updateSpeedExample();if(activeTab==='analyse')updateAlgorithm();render()
+}
+function updateConstraints(){
+ const oe=edgeMap.get(state.obsEdge),ne=edgeMap.get(state.oneEdge);
+ $('obsRoute').innerHTML=oe?`<b>${esc(edgeLbl(oe))}</b><small>${esc(oe.name)} · ${fmt(oe.km,2)} km</small>`:'<span class="muted">Aucun obstacle</span>';
+ for(const b of $('obsTypes').children)b.classList.toggle('on',b.dataset.o===state.obstacle);
+ $('speedWrap').hidden=state.obstacle==='closed';$('obSpeed').value=state.obSpeed;$('speedNum').textContent=state.obSpeed+' km/h';
+ $('oneRoute').innerHTML=ne?`<b>${esc(edgeLbl(ne))}</b><small>${esc(ne.name)} · ${fmt(ne.km,2)} km</small>`:'<span class="muted">Aucun sens unique</span>';
+ if(ne){$('dirFwd').textContent=`${lbl(ne.a)} → ${lbl(ne.b)}`;$('dirBwd').textContent=`${lbl(ne.b)} → ${lbl(ne.a)}`;$('dirFwd').classList.toggle('on',state.oneFwd);$('dirBwd').classList.toggle('on',!state.oneFwd)}
+ $('oneDirs').style.display=ne?'':'none';$('obsTypes').style.display=oe?'':'none';if(!oe)$('speedWrap').hidden=true
+}
+function updateNetInfo(){const g=graph;$('netInfo').innerHTML=`<b>${esc(g.title)}</b><div>${nReal()} nœuds · ${g.edges.length} tronçons · ${fmt(g.edges.reduce((v,e)=>v+e.km,0),1)} km de voies</div><div>${g.comps===1?'✔ Réseau entièrement connecté':`⚠ ${g.comps} parties non reliées entre elles (la plus grande : ${g.mainSize} nœuds). Vérifiez les intersections dans QGIS.`}</div>`}
+function updateComparison(){
+ const m=$('barSeg').querySelector('.on').dataset.m,vals=results.map(r=>r.fast.found?(m==='time'?r.fast.min:r.fast.km):Infinity),max=Math.max(.1,...vals.filter(Number.isFinite));
+ $('bars').innerHTML=vals.map((v,i)=>`<div class="br"><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${COLORS[i]};margin-right:5px"></i>Test ${i+1}</span><div class="tr"><i style="width:${Number.isFinite(v)?Math.max(2,v/max*100):0}%;background:${COLORS[i]}"></i></div><b>${Number.isFinite(v)?fmt(v,m==='time'?1:2)+(m==='time'?' min':' km'):'—'}</b></div>`).join('');
+ const [a,b,c]=results.map(r=>r.fast),uniq=new Set([routeSig(a),routeSig(b),routeSig(c)]).size,d=a.found&&c.found?c.min-a.min:null;
+ $('comparison').innerHTML=`<b>${uniq} tracé(s) différent(s)</b>. ${d==null?'Une contrainte rend la destination inaccessible.':`Du test 1 au test 3, le trajet le plus rapide passe de <b>${fmt(a.min,1)} min</b> à <b>${fmt(c.min,1)} min</b> (${d>=0?'+':''}${fmt(d,1)} min).`}${uniq<3?' Une contrainte ne change pas forcément l’itinéraire.':''}`
+}
+function updateSpeedExample(){const e=edgeMap.get(state.obsEdge)||graph.edges[0];if(!e)return;const v=baseSpeed(e),vv=speedOf(e,1);$('speedExample').innerHTML=`${esc(edgeLbl(e))} · ${fmt(e.km,2)} km<br>Sans obstacle : ${fmt(e.km,2)} / ${fmt(v,1)} × 60 = ${fmt(60*e.km/v,2)} min<br>Avec obstacle : ${vv===0?'tronçon interdit':`${fmt(e.km,2)} / ${fmt(vv,1)} × 60 = ${fmt(60*e.km/vv,2)} min`}`}
+function updateAlgorithm(){
+ const sc=selectedCase,r=dijkstra(state.start,state.end,sc,algoCrit,true),unit=algoCrit==='time'?'min':'km';
+ $('algoSummary').innerHTML=r.found?`Test ${sc+1} · <b>${esc(lbl(state.start))}</b> → <b>${esc(lbl(state.end))}</b> : ${fmt(r.min,2)} min, ${fmt(r.km,2)} km.`:'Aucun chemin admissible.';
+ $('formulas').textContent=algoCrit==='time'?'coût de l’arc (min) = 60 × distance (km) / vitesse (km/h)':'coût de l’arc (km) = longueur du tronçon';
+ algoStep=Math.min(algoStep,r.trace.length);$('stepCount').textContent=`Étape ${algoStep}/${r.trace.length}`;
+ const items=r.trace.slice(Math.max(0,algoStep-250),algoStep);
+ $('traceText').innerHTML=items.length?items.map((s,i)=>`<div style="margin-bottom:7px"><span class="hl">${algoStep-items.length+i+1}. ${esc(s.node)}</span> — ${esc(s.msg)}${s.updates.length?'<div style="margin-left:10px;color:#b8cdd8">'+s.updates.slice(0,12).map(esc).join('<br>')+(s.updates.length>12?'<br>…':'')+'</div>':''}</div>`).join(''):'Appuyez sur « Suivant » pour voir comment Dijkstra explore le réseau.';
+ $('edgeBreakdown').innerHTML=r.found?r.edges.slice(0,80).map(e=>`<tr><td><b>${esc(edgeLbl(e))}</b></td><td>${fmt(e.km,2)} km</td><td>${fmt(speedOf(e,sc),1)} km/h</td><td><b>${fmt(60*e.km/speedOf(e,sc),2)} min</b></td></tr>`).join('')+(r.edges.length>80?'<tr><td colspan="4">…</td></tr>':''):'<tr><td colspan="4">Aucun itinéraire.</td></tr>'
+}
+
+/* ---------- carte : vue et rendu ---------- */
+const view={cx:128,cy:128,z:2};let W=0,H=0,raf=0,pendingFit=true;
+const K=()=>Math.pow(2,view.z);
+function fitView(){
+ if(!W||!H){pendingFit=true;return}pendingFit=false;const b=graph.bounds,bw=Math.max(b.maxx-b.minx,1e-9),bh=Math.max(b.maxy-b.miny,1e-9);
+ const top=Math.min(190,H*.4),bot=36,k=Math.min((W-84)/bw,(H-top-bot)/bh);view.z=Math.max(1,Math.min(19.5,Math.log2(k)));const kk=K(),off=top+(H-top-bot)/2-H/2;view.cx=(b.minx+b.maxx)/2+27/kk;view.cy=(b.miny+b.maxy)/2-off/kk;schedule()
+}
+function schedule(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})}
+function resize(){const r=$('mapWrap');W=r.clientWidth;H=r.clientHeight;if(pendingFit&&graph)fitView();else schedule()}
+function zoomAt(px,py,dz){const k0=K(),wx=view.cx+(px-W/2)/k0,wy=view.cy+(py-H/2)/k0;view.z=Math.max(1,Math.min(21,view.z+dz));const k=K();view.cx=wx-(px-W/2)/k;view.cy=wy-(py-H/2)/k;schedule()}
+
+/* tuiles OSM */
+const tiles=new Map();let tileOk=0,tileErr=0,lastAttr='';
+const curChain=()=>(LAYERS.find(l=>l.id===layerId)||LAYERS[0]).chain,curSrcId=()=>curChain()[srcIdx];
+function clearTiles(){for(const img of tiles.values())img.remove();tiles.clear();tileOk=0;tileErr=0;$('osmMsg').hidden=true}
+function failover(){const ch=curChain();if(srcIdx<ch.length-1){const from=SRC[ch[srcIdx]].name;srcIdx++;clearTiles();toast(`${from} ne répond pas : essai avec ${SRC[ch[srcIdx]].name}.`,4500);schedule()}else{$('osmMsg').textContent='Fond indisponible : changez de type de carte';$('osmMsg').className='warnmsg';$('osmMsg').hidden=false}}
+function updateTiles(){
+ const box=$('tiles'),sid=curSrcId(),on=showOSM&&!!sid;box.style.display=on?'':'none';$('osmAttr').hidden=!on;if(!on)return;
+ const S=SRC[sid];if(lastAttr!==sid){$('osmAttr').innerHTML=S.attr;lastAttr=sid}
+ const k=K(),tz=Math.max(0,Math.min(S.max,Math.round(view.z))),n=1<<tz,tw=256/n,x0=view.cx-W/2/k,x1=view.cx+W/2/k,y0=view.cy-H/2/k,y1=view.cy+H/2/k;
+ const need=new Set();
+ for(let i=Math.max(0,Math.floor(x0/tw));i<=Math.min(n-1,Math.floor(x1/tw));i++)for(let j=Math.max(0,Math.floor(y0/tw));j<=Math.min(n-1,Math.floor(y1/tw));j++){
+  const key=sid+'/'+tz+'/'+i+'/'+j;need.add(key);let img=tiles.get(key);
+  if(!img){img=new Image();img.alt='';img.decoding='async';img.referrerPolicy='strict-origin-when-cross-origin';img.style.zIndex=tz;
+   img.onload=()=>{img.classList.add('ok');if(sid===curSrcId()){tileOk++;$('osmMsg').hidden=true}};
+   img.onerror=()=>{img.remove();tiles.delete(key);if(sid!==curSrcId())return;if(++tileErr>=3&&!tileOk)failover()};
+   img.src=S.url(tz,i,j);tiles.set(key,img);box.appendChild(img)}
+  const sc=tw*k/256;img.style.transform=`translate(${(i*tw-view.cx)*k+W/2}px,${(j*tw-view.cy)*k+H/2}px) scale(${sc})`}
+ for(const [key,img] of tiles){const [,zs,is,js]=key.split('/'),z=+zs;if(Math.abs(z-tz)>=2||(z===tz&&!need.has(key))){img.remove();tiles.delete(key)}else if(z!==tz){const tw2=256/(1<<z),sc=tw2*k/256;img.style.transform=`translate(${(+is*tw2-view.cx)*k+W/2}px,${(+js*tw2-view.cy)*k+H/2}px) scale(${sc})`}}
+}
+function setLayer(id,silent){
+ layerId=id;if(id!=='none')lastLayer=id;showOSM=id!=='none';srcIdx=0;lastAttr='';clearTiles();
+ $('osmSwitch').checked=showOSM;$('osmBtn').classList.toggle('on',showOSM);if(showOSM)$('baseSel').value=id;
+ for(const b of $('lgrid').children)b.classList.toggle('on',b.dataset.layer===id);
+ if(showOSM&&!silent&&!navigator.onLine)toast('Hors ligne : seules les tuiles déjà consultées s’affichent.');schedule()
+}
+function setOSM(on,silent){setLayer(on?lastLayer:'none',silent)}
+function buildLayers(){
+ $('lgrid').innerHTML=LAYERS.map(l=>`<button data-layer="${l.id}"><i style="background:${l.sw}"></i>${l.name}</button>`).join('');
+ $('baseSel').innerHTML=LAYERS.filter(l=>l.id!=='none').map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
+ $('lgrid').addEventListener('click',e=>{const b=e.target.closest('[data-layer]');if(!b)return;setLayer(b.dataset.layer);$('layers').hidden=true});
+ $('baseSel').onchange=e=>setLayer(e.target.value);
+}
+function locate(){
+ if(!navigator.geolocation){toast('Géolocalisation indisponible sur cet appareil.');return}
+ toast('Recherche de votre position…',2500);
+ navigator.geolocation.getCurrentPosition(pos=>{me={lon:pos.coords.longitude,lat:pos.coords.latitude,acc:pos.coords.accuracy||30};const m=merc(me.lon,me.lat);view.cx=m.x;view.cy=m.y;view.z=Math.max(view.z,15);$('locBtn').classList.add('on');schedule();toast(`Position trouvée (± ${Math.round(me.acc)} m).`)},err=>toast(err.code===1?'Position refusée : autorisez la localisation pour ce site.':'Position introuvable.',4500),{enableHighAccuracy:true,timeout:12000,maximumAge:30000})
+}
+
+const CLS={primary:[9,'#22303c'],secondary:[6.5,'#66798a'],local:[4.5,'#a3b2bd']};
+function render(){
+ if(!graph||!W)return;updateTiles();
+ const svg=$('map'),k=K(),hw=W/2,hh=H/2,N=graph.nodes.length,SX=new Float64Array(N),SY=new Float64Array(N);
+ for(let i=0;i<N;i++){const n=graph.nodes[i];SX[i]=(n.x-view.cx)*k+hw;SY[i]=(n.y-view.cy)*k+hh}
+ const m=40,vis=(i,j)=>!((SX[i]<-m&&SX[j]<-m)||(SX[i]>W+m&&SX[j]>W+m)||(SY[i]<-m&&SY[j]<-m)||(SY[i]>H+m&&SY[j]>H+m));
+ const d={primary:'',secondary:'',local:''},P=v=>v.toFixed(1);
+ for(const e of graph.edges)if(vis(e.ia,e.ib))d[e.cls]+=`M${P(SX[e.ia])} ${P(SY[e.ia])}L${P(SX[e.ib])} ${P(SY[e.ib])}`;
+ let o='<g fill="none" stroke-linecap="round" stroke-linejoin="round">';
+ const seg=e=>`M${P(SX[e.ia])} ${P(SY[e.ia])}L${P(SX[e.ib])} ${P(SY[e.ib])}`;
+ const selE=sel?.type==='edge'?edgeMap.get(sel.id):null;
+ if(selE)o+=`<path d="${seg(selE)}" stroke="#f6c24a" stroke-width="17" opacity=".75"/>`;
+ const sat=showOSM&&layerId==='sat',CAS=sat?'#0b1220':'#fff',COL=sat?{primary:'#ffffff',secondary:'#e2e8f0',local:'#cbd5e1'}:{primary:CLS.primary[1],secondary:CLS.secondary[1],local:CLS.local[1]};
+ for(const c of ['local','secondary','primary'])if(d[c])o+=`<path d="${d[c]}" stroke="${CAS}" stroke-width="${CLS[c][0]+3}" opacity="${sat?.8:.9}"/>`;
+ for(const c of ['local','secondary','primary'])if(d[c])o+=`<path d="${d[c]}" stroke="${COL[c]}" stroke-width="${CLS[c][0]-2}"/>`;
+ const oe=edgeMap.get(state.obsEdge),ne=edgeMap.get(state.oneEdge);
+ if(oe)o+=`<path d="${seg(oe)}" stroke="#fff" stroke-width="13"/><path d="${seg(oe)}" stroke="#C62828" stroke-width="8" stroke-dasharray="7 5" stroke-linecap="butt"/>`;
+ const order=showAll?[0,1,2].filter(i=>i!==selectedCase).concat(selectedCase):[selectedCase];
+ const OFF=[-7,0,7],routePP=new Map(),offPts=(idx,off)=>{const n=idx.length,out=[];for(let q=0;q<n;q++){let nx=0,ny=0,c=0;if(q>0){const dx=SX[idx[q]]-SX[idx[q-1]],dy=SY[idx[q]]-SY[idx[q-1]],l=Math.hypot(dx,dy)||1;nx+=-dy/l;ny+=dx/l;c++}if(q<n-1){const dx=SX[idx[q+1]]-SX[idx[q]],dy=SY[idx[q+1]]-SY[idx[q]],l=Math.hypot(dx,dy)||1;nx+=-dy/l;ny+=dx/l;c++}const l=Math.hypot(nx,ny)||1,sc=c===1?1:Math.min(2,2/l);out.push([SX[idx[q]]+nx/l*off*sc,SY[idx[q]]+ny/l*off*sc])}return out};
+ for(const i of order){const r=mapCriterion==='time'?results[i]?.fast:results[i]?.short;if(!r?.found)continue;const on=i===selectedCase,pp=offPts(r.idx,showAll?OFF[i]:0);routePP.set(i,pp);const pts=pp.map(q=>P(q[0])+','+P(q[1])).join(' ');
+  o+=`<polyline points="${pts}" stroke="#fff" stroke-width="${on?10:8}"/><polyline points="${pts}" stroke="${COLORS[i]}" stroke-width="${on?6:4.5}"/>`}
+ o+='</g>';
+ /* nœuds visibles */
+ const vn=[];for(let i=0;i<N;i++)if(!graph.nodes[i].virt&&SX[i]>-10&&SX[i]<W+10&&SY[i]>-10&&SY[i]<H+10)vn.push(i);
+ if(vn.length<=400){o+='<g>';for(const i of vn)o+=`<circle cx="${P(SX[i])}" cy="${P(SY[i])}" r="${vn.length>150?3:4.5}" fill="#fff" stroke="#22303c" stroke-width="1.8"/>`;o+='</g>';
+  if(vn.length<=45){o+='<g font-size="11" font-weight="700" fill="#143246" stroke="#fff" stroke-width="3" paint-order="stroke" style="pointer-events:none">';for(const i of vn)o+=`<text x="${P(SX[i]+8)}" y="${P(SY[i]-8)}">${esc(graph.nodes[i].label)}</text>`;o+='</g>'}}
+ if(sel?.type==='node'){const n=nodesMap.get(sel.id);if(n)o+=`<circle cx="${P(SX[n.i])}" cy="${P(SY[n.i])}" r="13" fill="none" stroke="#f6c24a" stroke-width="4"/>`}
+ /* kilométrages par tronçon */
+ const at=(e,t)=>[SX[e.ia]+(SX[e.ib]-SX[e.ia])*t,SY[e.ia]+(SY[e.ib]-SY[e.ia])*t],tm=.5,isC=e=>e.id===state.obsEdge||e.id===state.oneEdge,sideOff=e=>{const dx=SX[e.ib]-SX[e.ia],dy=SY[e.ib]-SY[e.ia],l=Math.hypot(dx,dy)||1;let nx=-dy/l,ny=dx/l;if(ny<-.01||(Math.abs(ny)<=.01&&nx<0)){nx=-nx;ny=-ny}return[nx*21,ny*21]};
+ const drawn=order.map(i=>[i,mapCriterion==='time'?results[i]?.fast:results[i]?.short]).filter(([,r])=>r?.found);
+ if(showKm){
+  const rc=new Map(),rs=drawn.find(d=>d[0]===selectedCase),rp=routePP.get(selectedCase);if(rs&&rp)rs[1].edges.forEach((e,q)=>{const a=rp[q],b=rp[q+1];let x=(a[0]+b[0])/2,y=(a[1]+b[1])/2;if(isC(e)){const [mx,my]=at(e,.5),[ox,oy]=sideOff(e);x=mx+ox;y=my+oy}rc.set(e.id,{x,y,L:Math.hypot(b[0]-a[0],b[1]-a[1])})});
+  const pill=(x,y,txt,fill,tc,st,small)=>{const w=txt.length*(small?5.2:6.3)+(small?8:11),h=small?14:17;return`<g transform="translate(${P(x)} ${P(y)})"><rect x="${P(-w/2)}" y="${-h/2}" width="${P(w)}" height="${h}" rx="${h/2}" fill="${fill}" ${st?`stroke="${st}" stroke-width="1.3"`:''}/><text y="${small?3.4:4}" text-anchor="middle" fill="${tc}" ${small?'font-size="9.5" font-weight="700"':''}>${txt}</text></g>`};
+  let plain='',onr='',cnt=0;
+  for(const e of graph.edges){if(cnt>260)break;if(!vis(e.ia,e.ib))continue;const Lpx=Math.hypot(SX[e.ib]-SX[e.ia],SY[e.ib]-SY[e.ia]),ri=rc.get(e.id);if(ri===undefined&&Lpx<60)continue;if(ri!==undefined&&ri.L<30)continue;
+   const txt=fmt(e.km,e.km<10?2:1);cnt++;
+   if(ri===undefined){let [x,y]=at(e,.5);if(isC(e)){const [ox,oy]=sideOff(e);x+=ox;y+=oy}plain+=pill(x,y,txt,'rgba(255,255,255,.88)','#41535f','',true)}else onr+=pill(ri.x,ri.y,txt,COLORS[selectedCase],ON[selectedCase],'#fff')}
+  o+=`<g font-size="10.5" font-weight="800" style="pointer-events:none">${plain}${onr}</g>`}
+ /* marqueurs */
+ if(oe){const [x,y]=at(oe,tm);o+=`<g transform="translate(${P(x)} ${P(y)})"><circle r="12.5" fill="#C62828" stroke="#fff" stroke-width="2.5"/><text y="5.5" text-anchor="middle" fill="#fff" font-weight="900" font-size="16">!</text></g>`}
+ if(ne){const [x,y]=at(ne,tm),f=state.oneFwd?ne.ia:ne.ib,t=state.oneFwd?ne.ib:ne.ia,deg=Math.atan2(SY[t]-SY[f],SX[t]-SX[f])*180/Math.PI;o+=`<g transform="translate(${P(x)} ${P(y)}) rotate(${P(deg)})"><rect x="-15" y="-10" width="30" height="20" rx="6" fill="#111" stroke="#fff" stroke-width="2.2"/><path d="M-8 0H8M3 -5L8 0L3 5" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>`}
+ if(virt)for(const sp of virt.specs){const tx=(sp.m.x-view.cx)*k+hw,ty=(sp.m.y-view.cy)*k+hh,sx=SX[sp.i],sy=SY[sp.i];o+=`<g fill="none" stroke-linecap="round"><line x1="${P(tx)}" y1="${P(ty)}" x2="${P(sx)}" y2="${P(sy)}" stroke="#fff" stroke-width="7"/><line x1="${P(tx)}" y1="${P(ty)}" x2="${P(sx)}" y2="${P(sy)}" stroke="#0c2033" stroke-width="3.5" stroke-dasharray="2 6"/></g><circle cx="${P(sx)}" cy="${P(sy)}" r="4.5" fill="#0c2033" stroke="#fff" stroke-width="2"/>`;if(showKm&&Math.hypot(tx-sx,ty-sy)>34){const txt='+ '+fmtD(sp.acc),w=txt.length*5.6+10;o+=`<g transform="translate(${P((tx+sx)/2)} ${P((ty+sy)/2)})" style="pointer-events:none"><rect x="${P(-w/2)}" y="-8" width="${P(w)}" height="16" rx="8" fill="#0c2033"/><text y="3.8" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">${txt}</text></g>`}}
+ if(me){const m=merc(me.lon,me.lat),mx=(m.x-view.cx)*k+hw,my=(m.y-view.cy)*k+hh,mpp=40075016.686/256/k*Math.cos(me.lat*Math.PI/180),ar=Math.min(200,me.acc/mpp);o+=`<g class="me" transform="translate(${P(mx)} ${P(my)})"><circle r="${P(Math.max(ar,10))}" fill="#1a73e8" opacity=".16"/><circle r="8" fill="#1a73e8" stroke="#fff" stroke-width="3"/></g>`}
+ for(const [id,t] of [[state.start,'A'],[state.end,'B']]){const n=nodesMap.get(id);if(n){let x=SX[n.i],y=SY[n.i];if(n.virt){const sp=virt.specs.find(q=>q.id===id);x=(sp.m.x-view.cx)*k+hw;y=(sp.m.y-view.cy)*k+hh}o+=`<g transform="translate(${P(x)} ${P(y)})"><circle r="14" fill="#0c2033" stroke="#fff" stroke-width="3"/><text y="5" text-anchor="middle" fill="#fff" font-weight="900" font-size="14">${t}</text></g>`}}
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=o;
+ /* échelle */
+ const mpp=40075016.686/256/k*Math.cos((graph.nodes[0]?.lat||0)*Math.PI/180);let len=10;for(const s of [10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000,200000,500000])if(s/mpp<=110)len=s;
+ $('scaleBar').style.width=Math.max(8,len/mpp)+'px';$('scaleTxt').textContent=len>=1000?len/1000+' km':len+' m'
+}
+
+/* ---------- interactions carte ---------- */
+function hit(px,py){
+ const k=K();let bi=-1,bd=24*24;
+ for(const n of graph.nodes){if(n.virt)continue;const dx=(n.x-view.cx)*k+W/2-px,dy=(n.y-view.cy)*k+H/2-py,dd=dx*dx+dy*dy;if(dd<bd){bd=dd;bi=n.i}}
+ if(bi>=0)return{type:'node',id:graph.nodes[bi].id};
+ let be=null,bde=18*18;
+ for(const e of graph.edges){const a=graph.nodes[e.ia],b=graph.nodes[e.ib],ax=(a.x-view.cx)*k+W/2,ay=(a.y-view.cy)*k+H/2,bx=(b.x-view.cx)*k+W/2,by=(b.y-view.cy)*k+H/2,vx=bx-ax,vy=by-ay,L2=vx*vx+vy*vy;let t=L2?((px-ax)*vx+(py-ay)*vy)/L2:0;t=Math.max(0,Math.min(1,t));const dx=ax+t*vx-px,dy=ay+t*vy-py,dd=dx*dx+dy*dy;if(dd<bde){bde=dd;be=e}}
+ return be?{type:'edge',id:be.id}:null
+}
+function setOneWay(id){const e=edgeMap.get(id),r=results[0]?.fast;state.oneEdge=id;state.oneFwd=true;if(r?.found){const k=r.edges.findIndex(x=>x.id===id);if(k>=0)state.oneFwd=!(r.idx[k]===e.ia)}}
+function setPick(mode){pick=mode;const t={start:'Touchez le départ, n’importe où sur la carte',end:'Touchez l’arrivée, n’importe où sur la carte',obs:'Touchez la route de l’obstacle',one:'Touchez la rue à sens unique'};$('banner').hidden=!mode;if(mode){$('bannerTxt').textContent=t[mode];setSheet(false);showCallout(null)}$('btnStart').classList.toggle('picking',mode==='start');$('btnEnd').classList.toggle('picking',mode==='end')}
+function showCallout(h){
+ sel=h;const c=$('callout');
+ if(!h){c.hidden=true;schedule();return}
+ if(h.type==='free'){const sn=snapTo(...Object.values(merc(h.pt.lon,h.pt.lat)));c.innerHTML=`<div class="ct"><b>Point libre</b><small>${sn?`à ${fmtD(sn.d*kmPerWorld(h.pt.lat))} de ${esc(edgeLbl(sn.e))}`:''}</small></div><div class="cb"><button data-act="startHere">A · Départ ici</button><button data-act="endHere">B · Arrivée ici</button></div><button class="cx" data-act="close" aria-label="Fermer">✕</button>`}
+ else if(h.type==='node')c.innerHTML=`<div class="ct"><b>Nœud ${esc(lbl(h.id))}</b></div><div class="cb"><button data-act="start">A · Départ</button><button data-act="end">B · Arrivée</button></div><button class="cx" data-act="close" aria-label="Fermer">✕</button>`;
+ else{const e=edgeMap.get(h.id);c.innerHTML=`<div class="ct"><b>${esc(edgeLbl(e))}</b><small>${esc(e.name)} · ${fmt(e.km,2)} km</small></div><div class="cb"><button data-act="startHere">A · Départ ici</button><button data-act="endHere">B · Arrivée ici</button><button data-act="obs">⛔ Obstacle</button><button data-act="one">↗ Sens unique</button></div><button class="cx" data-act="close" aria-label="Fermer">✕</button>`}
+ c.hidden=false;schedule()
+}
+function onTap(px,py){if(!$('layers').hidden)$('layers').hidden=true;
+ const k=K(),wx=view.cx+(px-W/2)/k,wy=view.cy+(py-H/2)/k,pt={lon:worldLon(wx),lat:worldLat(wy)};let h=hit(px,py);
+ if(pick){
+  if((pick==='start'||pick==='end')){if(h?.type==='node'){FP[pick]=null;state[pick]=h.id;toast((pick==='start'?'Départ : ':'Arrivée : ')+lbl(h.id))}else{FP[pick]=pt;toast((pick==='start'?'Départ':'Arrivée')+' : point libre')}}
+  else{if(h?.type!=='edge'){toast('Touchez une route.');return}if(pick==='obs'){state.obsEdge=h.id;toast('Obstacle sur '+edgeLbl(edgeMap.get(h.id)))}else{setOneWay(h.id);toast('Sens unique sur '+edgeLbl(edgeMap.get(h.id)))}}
+  setPick(null);updateAll();return}
+ showCallout(h?{...h,pt}:{type:'free',pt})
+}
+function setupMap(){
+ const w=$('mapWrap'),ptr=new Map();let g=null;
+ w.addEventListener('pointerdown',e=>{if(e.target.closest('.ui'))return;w.setPointerCapture(e.pointerId);const r=w.getBoundingClientRect();ptr.set(e.pointerId,{x:e.clientX-r.left,y:e.clientY-r.top});
+  if(ptr.size===1)g={m:'pan',sx:ptr.get(e.pointerId).x,sy:ptr.get(e.pointerId).y,cx:view.cx,cy:view.cy,moved:false,t:Date.now(),id:e.pointerId};
+  else if(ptr.size===2){const [a,b]=[...ptr.values()];g={m:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:view.z,moved:true}}});
+ w.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const r=w.getBoundingClientRect();ptr.set(e.pointerId,{x:e.clientX-r.left,y:e.clientY-r.top});if(!g)return;
+  if(g.m==='pan'&&ptr.size===1){const p=ptr.get(g.id);const dx=p.x-g.sx,dy=p.y-g.sy;if(!g.moved&&Math.hypot(dx,dy)>7)g.moved=true;if(g.moved){const k=K();view.cx=g.cx-dx/k;view.cy=g.cy-dy/k;schedule()}}
+  else if(g.m==='pinch'&&ptr.size>=2){const [a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,mx=(a.x+b.x)/2,my=(a.y+b.y)/2,z=Math.max(1,Math.min(21,g.z0+Math.log2(d/g.d0))),k0=K(),wx=view.cx+(mx-W/2)/k0,wy=view.cy+(my-H/2)/k0;view.z=z;const k=K();view.cx=wx-(mx-W/2)/k;view.cy=wy-(my-H/2)/k;schedule()}});
+ const end=e=>{if(!ptr.has(e.pointerId))return;const p=ptr.get(e.pointerId);ptr.delete(e.pointerId);
+  if(g?.m==='pan'&&!g.moved&&e.type==='pointerup'&&Date.now()-g.t<700)onTap(p.x,p.y);
+  if(ptr.size===1){const [id,q]=[...ptr.entries()][0];g={m:'pan',sx:q.x,sy:q.y,cx:view.cx,cy:view.cy,moved:true,t:0,id}}else if(ptr.size===0)g=null};
+ w.addEventListener('pointerup',end);w.addEventListener('pointercancel',end);
+ w.addEventListener('wheel',e=>{e.preventDefault();const r=w.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?.5:-.5)},{passive:false});
+ $('zIn').onclick=()=>zoomAt(W/2,H/2,1);$('zOut').onclick=()=>zoomAt(W/2,H/2,-1);$('zFit').onclick=fitView;
+ $('osmBtn').onclick=()=>{$('layers').hidden=!$('layers').hidden;if(!$('layers').hidden){$('legend').hidden=true;$('legBtn').classList.remove('on')}};$('locBtn').onclick=locate;
+ $('callout').addEventListener('click',e=>{const a=e.target.closest('[data-act]')?.dataset.act;if(!a)return;const h=sel;
+  if(a==='close'){showCallout(null);return}
+  if(a==='startHere'||a==='endHere'){const key=a==='startHere'?'start':'end';FP[key]=h.pt;toast((key==='start'?'Départ':'Arrivée')+' : point libre')}
+  else if(a==='start'||a==='end'){FP[a]=null;state[a]=h.id;toast((a==='start'?'Départ : ':'Arrivée : ')+lbl(h.id))}
+  else if(a==='obs'){state.obsEdge=h.id;toast('Obstacle sur '+edgeLbl(edgeMap.get(h.id)))}
+  else if(a==='one'){setOneWay(h.id);toast('Sens unique sur '+edgeLbl(edgeMap.get(h.id)))}
+  showCallout(null);updateAll()});
+ $('bannerX').onclick=()=>setPick(null);
+ new ResizeObserver(resize).observe(w);
+}
+
+/* ---------- panneau ---------- */
+function legendHTML(){
+ const line=(w,c,dash='')=>`<svg width="40" height="14"><line x1="3" y1="7" x2="37" y2="7" stroke="#fff" stroke-width="${w+3}" stroke-linecap="round"/><line x1="3" y1="7" x2="37" y2="7" stroke="${c}" stroke-width="${w-2}" stroke-linecap="round" ${dash?`stroke-dasharray="${dash}"`:''}/></svg>`;
+ return `<b>Voies <button id="legX" aria-label="Fermer">✕</button></b><div class="lg">${line(9,'#22303c')}Axe principal</div><div class="lg">${line(6.5,'#66798a')}Voie secondaire</div><div class="lg">${line(4.5,'#a3b2bd')}Voie locale</div>
+ <b>Itinéraires</b><div class="lg">${line(7,COLORS[0])}1 · Réseau libre</div><div class="lg">${line(7,COLORS[1])}2 · + obstacle</div><div class="lg">${line(7,COLORS[2])}3 · + sens unique</div>
+ <b>Contraintes</b><div class="lg"><svg width="40" height="26"><circle cx="20" cy="13" r="11" fill="#C62828" stroke="#fff" stroke-width="2"/><text x="20" y="18" text-anchor="middle" fill="#fff" font-weight="900" font-size="14">!</text></svg>Obstacle</div><div class="lg"><svg width="40" height="26"><rect x="5" y="4" width="30" height="18" rx="6" fill="#111"/><path d="M12 13H28M24 8L29 13L24 18" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>Sens unique</div>
+ <b>Distances</b><div class="lg"><svg width="40" height="20"><rect x="3" y="2" width="34" height="16" rx="8" fill="#fff" stroke="#9fb0bc" stroke-width="1.3"/><text x="20" y="14" text-anchor="middle" fill="#22303c" font-size="10.5" font-weight="800">0,79</text></svg>km du tronçon</div>`}
+function setLegend(on){const el=$('legend');if(on&&!el.innerHTML)el.innerHTML=legendHTML();el.hidden=!on;$('legBtn').classList.toggle('on',on);if(on)$('legX').onclick=()=>setLegend(false);}
+function setSheet(open){$('sheet').classList.toggle('open',open);$('sheet').classList.toggle('peek',!open)}
+function showTab(id,open){if(id!==activeTab)document.querySelector('.panels').scrollTop=0;activeTab=id;for(const b of $('tabs').children)b.classList.toggle('on',b.dataset.tab===id);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));if(id==='analyse')updateAlgorithm();if(open!==undefined)setSheet(open)}
+function demo(){setGraph(demoNetwork(),'demo');showTab('trajet',false);toast('Démonstration : A4 → F4 à 17 h, bouchon sur D4–E4 puis sens unique A4–B4.',4500)}
+function bind(){
+ setupMap();
+ $('kmBtn').onclick=()=>{showKm=!showKm;$('kmBtn').classList.toggle('on',showKm);schedule()};
+ $('legBtn').onclick=()=>setLegend($('legend').hidden);
+ $('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const open=$('sheet').classList.contains('open');if(b.dataset.tab===activeTab)setSheet(!open);else showTab(b.dataset.tab,b.dataset.tab==='trajet'?open:true)});
+ $('handle').onclick=()=>setSheet(!$('sheet').classList.contains('open'));
+ {let y0=null;$('handle').addEventListener('pointerdown',e=>{y0=e.clientY});$('handle').addEventListener('pointerup',e=>{if(y0!==null&&Math.abs(e.clientY-y0)>28){setSheet(e.clientY<y0);e.preventDefault();y0=null;$('handle').dataset.sw=1}else y0=null});$('handle').addEventListener('click',e=>{if($('handle').dataset.sw){delete $('handle').dataset.sw;e.stopImmediatePropagation()}},true)}
+ $('results').addEventListener('click',e=>{const b=e.target.closest('[data-case]');if(!b)return;selectedCase=+b.dataset.case;algoStep=0;updateAll()});
+ $('btnStart').onclick=()=>setPick(pick==='start'?null:'start');$('btnEnd').onclick=()=>setPick(pick==='end'?null:'end');
+ $('swap').onclick=()=>{[state.start,state.end]=[state.end,state.start];[FP.start,FP.end]=[FP.end,FP.start];updateAll()};
+ $('vehSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.vehicle=b.dataset.v;setSeg('vehSeg','v',state.vehicle);if(state.vehicle==='walk')toast('Piéton : ni embouteillage de taxis ni sens unique automobile.');updateAll()});
+ $('hour').onchange=e=>{state.hour=Number(e.target.value);updateAll()};
+ $('critSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mapCriterion=b.dataset.crit;setSeg('critSeg','crit',mapCriterion);updateRsum();schedule()});
+ $('rsum').addEventListener('click',e=>{const b=e.target.closest('[data-case]');if(!b)return;selectedCase=+b.dataset.case;algoStep=0;updateAll()});
+ $('allBtn').onclick=()=>{showAll=!showAll;$('allBtn').classList.toggle('on',showAll);schedule()};
+ $('obsPick').onclick=()=>setPick('obs');$('onePick').onclick=()=>setPick('one');
+ $('obsClear').onclick=()=>{state.obsEdge=null;updateAll()};$('oneClear').onclick=()=>{state.oneEdge=null;updateAll()};
+ $('obsTypes').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.obstacle=b.dataset.o;if(state.obstacle!=='closed')state.obSpeed={traffic:5,pothole:12,works:15}[state.obstacle];updateAll()});
+ $('obSpeed').oninput=e=>{state.obSpeed=Number(e.target.value);updateAll()};
+ $('dirFwd').onclick=()=>{state.oneFwd=true;updateAll()};$('dirBwd').onclick=()=>{state.oneFwd=false;updateAll()};
+ $('barSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setSeg('barSeg','m',b.dataset.m);updateComparison()});
+ $('algoSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;algoCrit=b.dataset.c;setSeg('algoSeg','c',algoCrit);algoStep=0;updateAlgorithm()});
+ $('tracePrev').onclick=()=>{algoStep=Math.max(0,algoStep-1);updateAlgorithm()};$('traceNext').onclick=()=>{algoStep++;updateAlgorithm()};$('traceAll').onclick=()=>{algoStep=1e9;updateAlgorithm()};
+ for(const id of ['vPrimary','vSecondary','vLocal','vWalk','peakCoeff','offCoeff'])$(id).oninput=e=>{state[id]=Number(e.target.value);$(id+'Out').textContent=id.includes('Coeff')?round(state[id]*100,0)+' %':String(state[id]).replace('.',',')+' km/h';updateAll()};
+ $('importBtn').onclick=()=>$('geoFile').click();
+ $('geoFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const {g,kind}=await importFile(f);setGraph(g);showTab('trajet',false);toast(`${kind} importé : ${g.nodes.length} nœuds, ${g.edges.length} tronçons${g.comps>1?` · ⚠ ${g.comps} parties non reliées`:' · réseau connecté'}.`,5500)}catch(err){toast('Import refusé : '+err.message,6000)}e.target.value=''};
+ $('osmSwitch').onchange=e=>setOSM(e.target.checked);
+ $('demoBtn').onclick=demo;$('demoTop').onclick=demo;
+ $('restoreDemo').onclick=()=>{setGraph(demoNetwork(),'demo');showTab('trajet',false);toast('Réseau pédagogique chargé.')};
+ $('exportBtn').onclick=exportResults;
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'){setPick(null);showCallout(null)}});
+}
+function exportResults(){
+ const out={titre:'GéoLab Réseaux — Groupe 10',date:new Date().toISOString(),source:graph.kind==='demo'?'Réseau fictif et simulations pédagogiques':'Réseau importé : '+graph.title,parametres:{...state},observations_reelles:false,scenarios:results.map((r,i)=>({test:i+1,rapide:{noeuds:r.fast.nodes,distance_km:round(r.fast.km,3),temps_min:round(r.fast.min,3)},court:{noeuds:r.short.nodes,distance_km:round(r.short.km,3),temps_min:round(r.short.min,3)}}))};
+ const u=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='geolab_resultats.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1500)
+}
+window.GeoLabTest={dijkstra,FP,virt:()=>virt,setFree:(k,lon,lat)=>{FP[k]=lon==null?null:{lon,lat};updateAll()},onTap,results:()=>results,state,graph:()=>graph,setGraph,demoNetwork,kmlSegments,geojsonSegments,buildGraph,importFile,kmzToText,view,showOSM:()=>showOSM,setLayer,layer:()=>layerId,src:()=>curSrcId()};
+buildLayers();bind();setGraph(demoNetwork(),'demo');resize();
+</script>
+<script>if('serviceWorker' in navigator&&location.protocol.startsWith('http')){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+</body></html>
